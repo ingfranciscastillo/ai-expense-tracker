@@ -6,7 +6,21 @@ import { uploadToCloudinary } from "../storage/cloudinary"
 import { extractDataFromReceipt } from "../ai/extraction"
 import type { ExtractionResult } from "../ai/prompts"
 import { createExpenseFromReceiptSchema } from "../validations/receipt"
-import { eq } from "drizzle-orm"
+import { eq, desc } from "drizzle-orm"
+
+export async function getReceipts(userId: string) {
+  return db
+    .select()
+    .from(receipts)
+    .where(eq(receipts.userId, userId))
+    .orderBy(desc(receipts.createdAt))
+}
+
+export async function getReceiptById(id: string) {
+  return db.query.receipts.findFirst({
+    where: eq(receipts.id, id),
+  })
+}
 import { revalidatePath } from "next/cache"
 
 export async function uploadReceipt(formData: FormData) {
@@ -142,7 +156,7 @@ export async function processReceiptWithAI(receiptId: string) {
       })
       .where(eq(receipts.id, receiptId))
 
-    revalidatePath("/receipts")
+    revalidatePath("/dashboard/receipts")
     return { success: true }
   } catch (error) {
     console.error("AI processing error:", error)

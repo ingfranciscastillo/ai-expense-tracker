@@ -1,28 +1,9 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import Link from "next/link"
+import { getReceipts } from "../../lib/actions/receipts"
 
-interface Receipt {
-  id: string
-  originalFilename: string
-  status: string
-  merchant: string | null
-  totalAmount: string | null
-  categorySuggestion: string | null
-  confidenceScore: string | null
-  createdAt: string
-}
-
-export default function ReceiptsPage() {
-  const [receipts, setReceipts] = useState<Receipt[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    // In a real app, this would be a server action or API call
-    // For now, we'll show an empty state
-    setIsLoading(false)
-  }, [])
+export default async function ReceiptsPage() {
+  // TODO: Get userId from session - using temp-user for now
+  const receipts = await getReceipts("temp-user")
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -45,8 +26,25 @@ export default function ReceiptsPage() {
     return "Baja"
   }
 
+  const getCategoryLabel = (category: string | null) => {
+    const labels: Record<string, string> = {
+      comida: "Comida",
+      transporte: "Transporte",
+      supermercado: "Supermercado",
+      salud: "Salud",
+      entretenimiento: "Entretenimiento",
+      software: "Software",
+      educacion: "Educación",
+      hogar: "Hogar",
+      servicios: "Servicios",
+      trabajo: "Trabajo",
+      otros: "Otros",
+    }
+    return category ? labels[category] || category : "-"
+  }
+
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Receipts</h1>
         <Link
@@ -57,9 +55,7 @@ export default function ReceiptsPage() {
         </Link>
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-8">Loading...</div>
-      ) : receipts.length === 0 ? (
+      {receipts.length === 0 ? (
         <div className="text-center py-8 border rounded-lg">
           <p className="text-muted-foreground mb-4">No receipts yet</p>
           <Link
@@ -81,29 +77,48 @@ export default function ReceiptsPage() {
                 <th className="px-4 py-3 text-left text-sm font-medium">Amount</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Category</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Confidence</th>
+                <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {receipts.map((receipt) => (
                 <tr key={receipt.id} className="border-t">
                   <td className="px-4 py-3 text-sm">
-                    {new Date(receipt.createdAt).toLocaleDateString()}
+                    {receipt.createdAt 
+                      ? new Date(receipt.createdAt).toLocaleDateString() 
+                      : "-"}
                   </td>
                   <td className="px-4 py-3 text-sm">{receipt.originalFilename}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
-                        receipt.status
+                        receipt.status || "pending"
                       )}`}
                     >
-                      {receipt.status}
+                      {receipt.status || "pending"}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm">{receipt.merchant || "-"}</td>
-                  <td className="px-4 py-3 text-sm">{receipt.totalAmount || "-"}</td>
-                  <td className="px-4 py-3 text-sm">{receipt.categorySuggestion || "-"}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {receipt.totalAmount 
+                      ? `${receipt.currency || "$"}${receipt.totalAmount}` 
+                      : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {getCategoryLabel(receipt.categorySuggestion)}
+                  </td>
                   <td className="px-4 py-3 text-sm">
                     {getConfidenceLabel(receipt.confidenceScore)}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {receipt.status === "completed" && (
+                      <Link
+                        href={`/dashboard/receipts/${receipt.id}`}
+                        className="text-primary hover:underline"
+                      >
+                        Review
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}

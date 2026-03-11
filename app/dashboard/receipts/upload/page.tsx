@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { uploadReceipt } from "../../../lib/actions/receipts"
 
 export default function UploadReceiptPage() {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -31,8 +33,10 @@ export default function UploadReceiptPage() {
         }
         setMessage({ type: "error", text: errorMessage })
       } else {
-        setMessage({ type: "success", text: "Receipt uploaded! Processing with AI..." })
-        e.currentTarget.reset()
+        setMessage({ type: "success", text: "Receipt uploaded! Redirecting to list..." })
+        setTimeout(() => {
+          router.push("/dashboard/receipts")
+        }, 1500)
       }
     } catch (error) {
       setMessage({ type: "error", text: `Error: ${error instanceof Error ? error.message : String(error)}` })
