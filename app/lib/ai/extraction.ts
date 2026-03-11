@@ -27,7 +27,7 @@ export async function extractDataFromReceipt(
 
   try {
     const result = await generateText({
-      model: groq("llama-3.2-11b-vision-preview"),
+      model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
       messages: [
         {
           role: "system",
@@ -70,7 +70,14 @@ export async function extractDataFromReceipt(
 
 function parseAIResponse(content: string): ExtractionResult {
   try {
-    const parsed = JSON.parse(content)
+    // Limpiar backticks y markdown wrapper
+    const cleaned = content
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/```$/i, '')
+      .trim()
+    
+    const parsed = JSON.parse(cleaned)
 
     if (!parsed.success) {
       return {

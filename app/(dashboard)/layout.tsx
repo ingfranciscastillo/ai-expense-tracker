@@ -6,11 +6,11 @@ import { ReactNode, useEffect } from "react"
 import Link from "next/link"
 
 const navigation = [
-  { name: "Dashboard", href: "/" },
-  { name: "Receipts", href: "/receipts" },
-  { name: "Expenses", href: "/expenses" },
-  { name: "Budgets", href: "/budgets" },
-  { name: "Reports", href: "/reports" },
+  { name: "Dashboard", href: "/dashboard" },
+  { name: "Receipts", href: "/dashboard/receipts" },
+  { name: "Expenses", href: "/dashboard/expenses" },
+  { name: "Budgets", href: "/dashboard/budgets" },
+  { name: "Reports", href: "/dashboard/reports" },
 ]
 
 export default function DashboardLayout({

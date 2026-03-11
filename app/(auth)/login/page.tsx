@@ -1,15 +1,22 @@
 "use client"
 
-import { signIn } from "../../lib/auth-client"
-import { useState } from "react"
+import { signIn, useSession } from "../../lib/auth-client"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
   const router = useRouter()
+  const { data: session, isPending } = useSession()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    if (!isPending && session) {
+      router.replace("/dashboard")
+    }
+  }, [session, isPending, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,7 +32,7 @@ export default function LoginPage() {
       if (result.error) {
         setError(result.error.message ?? "An error occurred")
       } else {
-        router.push("/")
+        router.push("/dashboard")
         router.refresh()
       }
     } catch (err) {
@@ -33,6 +40,18 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (isPending) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (session) {
+    return null
   }
 
   return (

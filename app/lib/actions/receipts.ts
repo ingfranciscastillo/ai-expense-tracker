@@ -42,9 +42,8 @@ export async function uploadReceipt(formData: FormData) {
       })
       .returning()
 
-    processReceiptWithAI(receipt.id).catch(console.error)
+    await processReceiptWithAI(receipt.id).catch(console.error)
 
-    revalidatePath("/receipts")
     return { success: true, receipt }
   } catch (error) {
     console.error("Upload error:", error)
