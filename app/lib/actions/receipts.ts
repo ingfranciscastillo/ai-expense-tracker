@@ -42,9 +42,21 @@ export async function uploadReceipt(formData: FormData) {
       })
       .returning()
 
-    await processReceiptWithAI(receipt.id).catch(console.error)
+    await processReceiptWithAI(receipt.id)
 
-    return { success: true, receipt }
+    const updatedReceipt = await db.query.receipts.findFirst({
+      where: eq(receipts.id, receipt.id),
+    })
+
+    if (updatedReceipt?.status === "failed") {
+      return { 
+        error: "AI processing failed. Please try again.", 
+        receipt: receipt,
+        details: updatedReceipt.aiRawResponse 
+      }
+    }
+
+    return { success: true, receipt: updatedReceipt ?? receipt }
   } catch (error) {
     console.error("Upload error:", error)
     return { error: "Failed to upload receipt" }

@@ -25,13 +25,17 @@ export default function UploadReceiptPage() {
       const result = await uploadReceipt(formData)
 
       if (result.error) {
-        setMessage({ type: "error", text: result.error })
+        let errorMessage = result.error
+        if (result.details) {
+          errorMessage += ` (${JSON.stringify(result.details)})`
+        }
+        setMessage({ type: "error", text: errorMessage })
       } else {
         setMessage({ type: "success", text: "Receipt uploaded! Processing with AI..." })
         e.currentTarget.reset()
       }
     } catch (error) {
-      setMessage({ type: "error", text: "An unexpected error occurred" })
+      setMessage({ type: "error", text: `Error: ${error instanceof Error ? error.message : String(error)}` })
     } finally {
       setIsLoading(false)
     }

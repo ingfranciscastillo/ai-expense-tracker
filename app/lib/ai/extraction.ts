@@ -26,6 +26,8 @@ export async function extractDataFromReceipt(
   }
 
   try {
+    console.log("Starting AI extraction with image URL:", imageUrl.substring(0, 50) + "...")
+    
     const result = await generateText({
       model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
       messages: [
@@ -45,11 +47,16 @@ export async function extractDataFromReceipt(
       ],
     })
 
+    console.log("AI response received, text length:", result.text.length)
+    console.log("First 200 chars:", result.text.substring(0, 200))
+
     const text = result.text
 
     return parseAIResponse(text)
   } catch (error) {
     console.error("AI extraction error:", error)
+    console.error("Error name:", error instanceof Error ? error.name : "Unknown")
+    console.error("Error message:", error instanceof Error ? error.message : String(error))
     return {
       success: false,
       error: String(error),
