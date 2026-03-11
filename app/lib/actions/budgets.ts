@@ -45,13 +45,17 @@ export async function getCurrentMonthBudget(userId: string, category?: string) {
   })
 }
 
-export async function createBudget(data: unknown) {
+export async function createBudget(data: unknown, userId: string) {
   try {
     const validated = createBudgetSchema.parse(data)
 
+    if (!userId) {
+      return { error: "Not authenticated" }
+    }
+
     const existingBudget = await db.query.budgets.findFirst({
       where: and(
-        eq(budgets.userId, "temp-user"),
+        eq(budgets.userId, userId),
         validated.isGlobal
           ? eq(budgets.isGlobal, true)
           : eq(budgets.category, validated.category as any),
@@ -67,7 +71,7 @@ export async function createBudget(data: unknown) {
     const [budget] = await db
       .insert(budgets)
       .values({
-        userId: "temp-user",
+        userId: userId,
         isGlobal: validated.isGlobal,
         category: validated.isGlobal ? null : validated.category,
         month: validated.month,

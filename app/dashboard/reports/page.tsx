@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "../../lib/auth-client"
 
 const categories = [
   { value: "comida", label: "Comida" },
@@ -17,6 +18,7 @@ const categories = [
 ]
 
 export default function ReportsPage() {
+  const { data: session } = useSession()
   const [isExporting, setIsExporting] = useState(false)
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
@@ -26,6 +28,11 @@ export default function ReportsPage() {
   const handleExportCSV = async () => {
     if (!startDate || !endDate) {
       alert("Please select start and end dates")
+      return
+    }
+
+    if (!session?.user?.id) {
+      alert("Not authenticated")
       return
     }
 
@@ -40,6 +47,7 @@ export default function ReportsPage() {
           endDate,
           categories: selectedCategories,
           includeDeductibleOnly: deductibleOnly,
+          userId: session.user.id,
         }),
       })
 

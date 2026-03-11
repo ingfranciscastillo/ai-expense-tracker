@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { createExpense } from "../../../lib/actions/expenses"
 import { useRouter } from "next/navigation"
+import { useSession } from "../../../lib/auth-client"
 
 const categories = [
   { value: "comida", label: "Comida" },
@@ -37,6 +38,7 @@ const paymentMethods = [
 
 export default function NewExpensePage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -44,6 +46,12 @@ export default function NewExpensePage() {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+
+    if (!session?.user?.id) {
+      setError("Not authenticated")
+      setIsLoading(false)
+      return
+    }
 
     const formData = new FormData(e.currentTarget)
     
@@ -60,13 +68,13 @@ export default function NewExpensePage() {
       deductibleNotes: formData.get("deductibleNotes") || undefined,
     }
 
-    const result = await createExpense(data)
+    const result = await createExpense(data, session.user.id)
 
     if (result.error) {
       setError(result.error)
       setIsLoading(false)
     } else {
-      router.push("/expenses")
+      router.push("/dashboard/expenses")
     }
   }
 

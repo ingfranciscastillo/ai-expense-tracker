@@ -45,14 +45,18 @@ export async function getExpenseById(id: string) {
   })
 }
 
-export async function createExpense(data: unknown) {
+export async function createExpense(data: unknown, userId: string) {
   try {
     const validated = createExpenseManualSchema.parse(data)
+
+    if (!userId) {
+      return { error: "Not authenticated" }
+    }
 
     const [expense] = await db
       .insert(expenses)
       .values({
-        userId: "temp-user",
+        userId: userId,
         merchant: validated.merchant,
         description: validated.description,
         expenseDate: new Date(validated.expenseDate),
@@ -66,7 +70,7 @@ export async function createExpense(data: unknown) {
       })
       .returning()
 
-    revalidatePath("/expenses")
+    revalidatePath("/dashboard/expenses")
     return { success: true, expense }
   } catch (error) {
     console.error("Create expense error:", error)

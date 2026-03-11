@@ -7,6 +7,7 @@ import { extractDataFromReceipt } from "../ai/extraction"
 import type { ExtractionResult } from "../ai/prompts"
 import { createExpenseFromReceiptSchema } from "../validations/receipt"
 import { eq, desc } from "drizzle-orm"
+import { revalidatePath } from "next/cache"
 
 export async function getReceipts(userId: string) {
   return db
@@ -21,14 +22,17 @@ export async function getReceiptById(id: string) {
     where: eq(receipts.id, id),
   })
 }
-import { revalidatePath } from "next/cache"
 
-export async function uploadReceipt(formData: FormData) {
+export async function uploadReceipt(formData: FormData, userId: string) {
   try {
     const file = formData.get("file") as File | null
 
     if (!file) {
       return { error: "No file provided" }
+    }
+
+    if (!userId) {
+      return { error: "Not authenticated" }
     }
 
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"]
@@ -47,7 +51,7 @@ export async function uploadReceipt(formData: FormData) {
     const [receipt] = await db
       .insert(receipts)
       .values({
-        userId: "temp-user", // Will be replaced with actual user ID
+        userId: userId,
         cloudinaryPublicId: cloudinaryResult.public_id,
         cloudinaryUrl: cloudinaryResult.secure_url,
         originalFilename: file.name,
@@ -178,9 +182,13 @@ export async function processReceiptWithAI(receiptId: string) {
   }
 }
 
-export async function createExpenseFromReceipt(data: unknown) {
+export async function createExpenseFromReceipt(data: unknown, userId: string) {
   try {
     const validated = createExpenseFromReceiptSchema.parse(data)
+
+    if (!userId) {
+      return { error: "Not authenticated" }
+    }
 
     const receipt = await db.query.receipts.findFirst({
       where: eq(receipts.id, validated.receiptId),
@@ -193,7 +201,7 @@ export async function createExpenseFromReceipt(data: unknown) {
     const [expense] = await db
       .insert(expenses)
       .values({
-        userId: "temp-user", // Will be replaced with actual user ID
+        userId: userId,
         receiptId: validated.receiptId,
         merchant: validated.merchant,
         description: validated.description,

@@ -2,10 +2,12 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "../../../lib/auth-client"
 import { uploadReceipt } from "../../../lib/actions/receipts"
 
 export default function UploadReceiptPage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -13,6 +15,12 @@ export default function UploadReceiptPage() {
     e.preventDefault()
     setIsLoading(true)
     setMessage(null)
+
+    if (!session?.user?.id) {
+      setMessage({ type: "error", text: "Not authenticated" })
+      setIsLoading(false)
+      return
+    }
 
     const formData = new FormData(e.currentTarget)
     const file = formData.get("file") as File
@@ -24,7 +32,7 @@ export default function UploadReceiptPage() {
     }
 
     try {
-      const result = await uploadReceipt(formData)
+      const result = await uploadReceipt(formData, session.user.id)
 
       if (result.error) {
         let errorMessage = result.error

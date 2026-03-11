@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createBudget } from "../../lib/actions/budgets"
 import { useRouter } from "next/navigation"
+import { useSession } from "../../lib/auth-client"
 
 const categories = [
   { value: "comida", label: "Comida" },
@@ -33,19 +34,56 @@ const months = [
   { value: 12, label: "December" },
 ]
 
+const currencies = [
+  { value: "USD", label: "USD - US Dollar" },
+  { value: "EUR", label: "EUR - Euro" },
+  { value: "MXN", label: "MXN - Mexican Peso" },
+  { value: "COP", label: "COP - Colombian Peso" },
+  { value: "ARS", label: "ARS - Argentine Peso" },
+]
+
 export default function BudgetsPage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [budgets, setBudgets] = useState<any[]>([])
+  const [loadingBudgets, setLoadingBudgets] = useState(true)
 
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchBudgets(session.user.id)
+    }
+  }, [session])
+
+  async function fetchBudgets(userId: string) {
+    try {
+      const res = await fetch(`/api/budgets?userId=${userId}`)
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setBudgets(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch budgets:", error)
+    } finally {
+      setLoadingBudgets(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+
+    if (!session?.user?.id) {
+      setError("Not authenticated")
+      setIsLoading(false)
+      return
+    }
 
     const formData = new FormData(e.currentTarget)
 
@@ -58,14 +96,24 @@ export default function BudgetsPage() {
       currency: formData.get("currency"),
     }
 
-    const result = await createBudget(data)
+    const result = await createBudget(data, session.user.id)
 
     if (result.error) {
       setError(result.error)
       setIsLoading(false)
     } else {
       setShowForm(false)
+      fetchBudgets(session.user.id)
     }
+  }
+
+  const getCategoryLabel = (category: string | null) => {
+    if (!category) return "Global"
+    return categories.find(c => c.value === category)?.label || category
+  }
+
+  const getMonthLabel = (month: number) => {
+    return months.find(m => m.value === month)?.label || ""
   }
 
   return (
@@ -156,19 +204,37 @@ export default function BudgetsPage() {
               </div>
 
               <div>
-                <label htmlFor="limitAmount" className="block text-sm font-medium mb-1">
-                  Limit Amount
+                <label htmlFor="currency" className="block text-sm font-medium mb-1">
+                  Currency
                 </label>
-                <input
-                  id="limitAmount"
-                  name="limitAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
+                <select
+                  id="currency"
+                  name="currency"
+                  defaultValue="USD"
                   className="w-full px-3 py-2 border rounded-md"
-                />
+                >
+                  {currencies.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="limitAmount" className="block text-sm font-medium mb-1">
+                Limit Amount
+              </label>
+              <input
+                id="limitAmount"
+                name="limitAmount"
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                className="w-full px-3 py-2 border rounded-md"
+              />
             </div>
 
             <button
@@ -195,11 +261,42 @@ export default function BudgetsPage() {
             </tr>
           </thead>
           <tbody>
-            <tr className="border-t">
-              <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                No budgets yet. Create one to start tracking.
-              </td>
-            </tr>
+            {loadingBudgets ? (
+              <tr className="border-t">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  Loading...
+                </td>
+              </tr>
+            ) : budgets.length === 0 ? (
+              <tr className="border-t">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  No budgets yet. Create one to start tracking.
+                </td>
+              </tr>
+            ) : (
+              budgets.map((budget) => (
+                <tr key={budget.id} className="border-t">
+                  <td className="px-4 py-3 text-sm">
+                    {getMonthLabel(budget.month)} {budget.year}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {budget.isGlobal ? "Global" : "Category"}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {getCategoryLabel(budget.category)}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {budget.currency} {budget.limitAmount}
+                  </td>
+                  <td className="px-4 py-3 text-sm">-</td>
+                  <td className="px-4 py-3 text-sm">
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div className="bg-primary h-2 rounded-full" style={{ width: "0%" }}></div>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

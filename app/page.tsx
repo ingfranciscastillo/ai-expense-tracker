@@ -9,10 +9,12 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isPending) {
-      if (session) {
-        router.replace("/dashboard");
-      }
+    if (isPending) return;
+
+    if (session) {
+      router.replace("/dashboard");
+    } else {
+      router.replace("/home");
     }
   }, [session, isPending, router]);
 
@@ -22,11 +24,6 @@ export default function HomePage() {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
-  }
-
-  if (!session) {
-    router.replace("/");
-    return null;
   }
 
   return null;

@@ -1,9 +1,8 @@
-"use client"
-
-import { useSession, signOut } from "../lib/auth-client"
-import { useRouter } from "next/navigation"
-import { ReactNode, useEffect } from "react"
+import { ReactNode } from "react"
 import Link from "next/link"
+import { getSession } from "../lib/auth"
+import { SignOutButton } from "./_components/sign-out-button"
+import { ModeToggle } from "@/components/ui/mode-toggle"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard" },
@@ -13,35 +12,15 @@ const navigation = [
   { name: "Reports", href: "/dashboard/reports" },
 ]
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: ReactNode
 }) {
-  const { data: session, isPending: isLoading } = useSession()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!isLoading && !session) {
-      router.push("/login")
-    }
-  }, [session, isLoading, router])
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-
-  if (!session) {
-    return null
-  }
+  const session = await getSession()
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
       <aside className="w-64 border-r bg-card">
         <div className="p-6">
           <h1 className="text-xl font-bold">AI Expense Manager</h1>
@@ -58,23 +37,18 @@ export default function DashboardLayout({
           ))}
         </nav>
         <div className="absolute bottom-0 w-64 p-4 border-t">
-          <button
-            onClick={() => signOut()}
-            className="w-full py-2 px-4 border rounded-md hover:bg-accent"
-          >
-            Sign Out
-          </button>
+          <SignOutButton />
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="flex-1">
         <header className="border-b">
           <div className="container mx-auto py-4 flex justify-between items-center">
             <div></div>
             <div className="flex items-center gap-4">
+              <ModeToggle />
               <span className="text-sm text-muted-foreground">
-                {session.user?.email}
+                {session?.user?.email}
               </span>
             </div>
           </div>

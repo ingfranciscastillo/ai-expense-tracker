@@ -1,6 +1,7 @@
 import { getReceiptById } from "../../../lib/actions/receipts"
 import { createExpenseFromReceipt } from "../../../lib/actions/receipts"
 import { redirect } from "next/navigation"
+import { getUserId } from "../../../lib/auth"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -8,6 +9,12 @@ interface Props {
 
 export default async function ReceiptReviewPage({ params }: Props) {
   const { id } = await params
+  const userId = await getUserId()
+  
+  if (!userId) {
+    redirect("/login")
+  }
+  
   const receipt = await getReceiptById(id)
 
   if (!receipt) {
@@ -25,6 +32,11 @@ export default async function ReceiptReviewPage({ params }: Props) {
   async function createExpense(formData: FormData) {
     "use server"
     
+    const userId = await getUserId()
+    if (!userId) {
+      redirect("/login")
+    }
+    
     const data = {
       receiptId: id,
       merchant: formData.get("merchant") as string,
@@ -39,7 +51,7 @@ export default async function ReceiptReviewPage({ params }: Props) {
       deductibleNotes: formData.get("deductibleNotes") as string | undefined,
     }
 
-    const result = await createExpenseFromReceipt(data)
+    const result = await createExpenseFromReceipt(data, userId!)
     
     if (result.success) {
       redirect("/dashboard/expenses")

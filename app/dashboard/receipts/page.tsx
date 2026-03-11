@@ -1,9 +1,31 @@
-import Link from "next/link"
-import { getReceipts } from "../../lib/actions/receipts"
+"use client"
 
-export default async function ReceiptsPage() {
-  // TODO: Get userId from session - using temp-user for now
-  const receipts = await getReceipts("temp-user")
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { useSession } from "../../lib/auth-client"
+
+export default function ReceiptsPage() {
+  const { data: session, isPending } = useSession()
+  const [receipts, setReceipts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchReceipts(session.user.id)
+    }
+  }, [session])
+
+  async function fetchReceipts(userId: string) {
+    try {
+      const res = await fetch(`/api/receipts?userId=${userId}`)
+      const data = await res.json()
+      setReceipts(data)
+    } catch (error) {
+      console.error("Failed to fetch receipts:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -41,6 +63,14 @@ export default async function ReceiptsPage() {
       otros: "Otros",
     }
     return category ? labels[category] || category : "-"
+  }
+
+  if (isPending || loading) {
+    return <div className="p-8 text-center">Loading...</div>
+  }
+
+  if (!session) {
+    return <div className="p-8 text-center">Please log in to view receipts.</div>
   }
 
   return (

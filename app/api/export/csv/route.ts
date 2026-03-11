@@ -4,7 +4,7 @@ import { exportExpensesToCSV } from "../../../lib/actions/reports"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { startDate, endDate, categories, includeDeductibleOnly } = body
+    const { startDate, endDate, categories, includeDeductibleOnly, userId } = body
 
     if (!startDate || !endDate) {
       return NextResponse.json(
@@ -13,8 +13,12 @@ export async function POST(request: Request) {
       )
     }
 
-    // In a real app, get userId from session
-    const userId = "temp-user"
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
 
     const csv = await exportExpensesToCSV(userId, {
       startDate,
