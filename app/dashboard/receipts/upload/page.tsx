@@ -28,7 +28,7 @@ export default function UploadReceiptPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl w-full mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold mb-8">Upload Receipt</h1>
       <UploadForm userId={session.user.id} />
     </div>

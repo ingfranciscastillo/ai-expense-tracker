@@ -135,7 +135,7 @@ export default function ReceiptsPage() {
             </Button>
           </CardContent>
         ) : (
-          <Table>
+          <Table className="max-w-full">
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
