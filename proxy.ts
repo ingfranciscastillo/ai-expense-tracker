@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { redirect } from 'next/navigation'
 import { auth } from './app/lib/auth'
 
 export async function proxy(request: NextRequest) {
@@ -10,14 +9,15 @@ export async function proxy(request: NextRequest) {
   })
 
   const isAuthenticated = !!session?.session
-  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register')
+  const isAuthRoute =
+    pathname.startsWith('/login') || pathname.startsWith('/register')
 
   if (!isAuthenticated && pathname.startsWith('/dashboard')) {
-    redirect('/login')
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   if (isAuthenticated && isAuthRoute) {
-    redirect('/dashboard')
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return NextResponse.next()

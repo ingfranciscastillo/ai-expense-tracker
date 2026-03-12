@@ -1,6 +1,8 @@
-import { Suspense } from "react"
-import { getSession } from "../lib/auth"
-import { DashboardContent } from "./_components/dashboard-content"
+"use client";
+
+import { Suspense } from "react";
+import { DashboardContent } from "./_components/dashboard-content";
+import { useSession } from "../lib/auth-client";
 
 function DashboardLoading() {
   return (
@@ -19,15 +21,15 @@ function DashboardLoading() {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
-export default async function DashboardPage() {
-  const session = await getSession()
+export default function DashboardPage() {
+  const { data } = useSession();
 
   return (
     <Suspense fallback={<DashboardLoading />}>
-      <DashboardContent user={session?.user} />
+      <DashboardContent user={data?.user} />
     </Suspense>
-  )
+  );
 }

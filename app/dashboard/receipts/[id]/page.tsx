@@ -1,60 +1,66 @@
-import { getReceiptById } from "../../../lib/actions/receipts"
-import { createExpenseFromReceipt } from "../../../lib/actions/receipts"
-import { redirect } from "next/navigation"
-import { getUserId } from "../../../lib/auth"
+import { getReceiptById } from "../../../lib/actions/receipts";
+import { createExpenseFromReceipt } from "../../../lib/actions/receipts";
+import { redirect } from "next/navigation";
+import { auth } from "@/app/lib/auth";
+import { headers } from "next/headers";
 
 interface Props {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }
 
 export default async function ReceiptReviewPage({ params }: Props) {
-  const { id } = await params
-  const userId = await getUserId()
-  
-  if (!userId) {
-    redirect("/login")
+  const { id } = await params;
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    redirect("/login");
   }
-  
-  const receipt = await getReceiptById(id)
+
+  const userId = session?.user.id;
+
+  const receipt = await getReceiptById(id);
 
   if (!receipt) {
     return (
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold">Receipt not found</h1>
       </div>
-    )
+    );
   }
 
   if (receipt.status !== "completed") {
-    redirect("/dashboard/receipts")
+    redirect("/dashboard/receipts");
   }
 
   async function createExpense(formData: FormData) {
-    "use server"
-    
-    const userId = await getUserId()
+    "use server";
+
     if (!userId) {
-      redirect("/login")
+      redirect("/login");
     }
-    
+
     const data = {
       receiptId: id,
       merchant: formData.get("merchant") as string,
       description: formData.get("description") as string | undefined,
       expenseDate: formData.get("expenseDate") as string,
       totalAmount: parseFloat(formData.get("totalAmount") as string),
-      taxAmount: formData.get("taxAmount") ? parseFloat(formData.get("taxAmount") as string) : undefined,
+      taxAmount: formData.get("taxAmount")
+        ? parseFloat(formData.get("taxAmount") as string)
+        : undefined,
       currency: formData.get("currency") as any,
       paymentMethod: formData.get("paymentMethod") as any,
       category: formData.get("category") as any,
       isDeductible: formData.get("isDeductible") === "on",
       deductibleNotes: formData.get("deductibleNotes") as string | undefined,
-    }
+    };
 
-    const result = await createExpenseFromReceipt(data, userId!)
-    
+    const result = await createExpenseFromReceipt(data, userId!);
+
     if (result.success) {
-      redirect("/dashboard/expenses")
+      redirect("/dashboard/expenses");
     }
   }
 
@@ -71,9 +77,9 @@ export default async function ReceiptReviewPage({ params }: Props) {
       servicios: "Servicios",
       trabajo: "Trabajo",
       otros: "Otros",
-    }
-    return category ? labels[category] || category : "otros"
-  }
+    };
+    return category ? labels[category] || category : "otros";
+  };
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -101,7 +107,7 @@ export default async function ReceiptReviewPage({ params }: Props) {
         {/* Extracted Data Form */}
         <div className="border rounded-lg p-6">
           <h2 className="text-lg font-semibold mb-4">Extracted Data</h2>
-          
+
           {receipt.aiNotes && (
             <div className="mb-4 p-3 bg-yellow-50 text-yellow-800 rounded text-sm">
               <strong>Note:</strong> {receipt.aiNotes}
@@ -124,9 +130,11 @@ export default async function ReceiptReviewPage({ params }: Props) {
               <input
                 name="expenseDate"
                 type="date"
-                defaultValue={receipt.expenseDate 
-                  ? new Date(receipt.expenseDate).toISOString().split("T")[0] 
-                  : ""}
+                defaultValue={
+                  receipt.expenseDate
+                    ? new Date(receipt.expenseDate).toISOString().split("T")[0]
+                    : ""
+                }
                 required
                 className="w-full px-3 py-2 border rounded-md"
               />
@@ -134,7 +142,9 @@ export default async function ReceiptReviewPage({ params }: Props) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Total Amount</label>
+                <label className="block text-sm font-medium mb-1">
+                  Total Amount
+                </label>
                 <input
                   name="totalAmount"
                   type="number"
@@ -145,7 +155,9 @@ export default async function ReceiptReviewPage({ params }: Props) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Tax Amount</label>
+                <label className="block text-sm font-medium mb-1">
+                  Tax Amount
+                </label>
                 <input
                   name="taxAmount"
                   type="number"
@@ -158,7 +170,9 @@ export default async function ReceiptReviewPage({ params }: Props) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Currency</label>
+                <label className="block text-sm font-medium mb-1">
+                  Currency
+                </label>
                 <select
                   name="currency"
                   defaultValue={receipt.currency || "USD"}
@@ -172,7 +186,9 @@ export default async function ReceiptReviewPage({ params }: Props) {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Payment Method</label>
+                <label className="block text-sm font-medium mb-1">
+                  Payment Method
+                </label>
                 <select
                   name="paymentMethod"
                   defaultValue={receipt.paymentMethod || "desconocido"}
@@ -210,7 +226,9 @@ export default async function ReceiptReviewPage({ params }: Props) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
+              <label className="block text-sm font-medium mb-1">
+                Description
+              </label>
               <textarea
                 name="description"
                 rows={2}
@@ -231,7 +249,9 @@ export default async function ReceiptReviewPage({ params }: Props) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Deductible Notes</label>
+              <label className="block text-sm font-medium mb-1">
+                Deductible Notes
+              </label>
               <textarea
                 name="deductibleNotes"
                 rows={2}
@@ -257,5 +277,5 @@ export default async function ReceiptReviewPage({ params }: Props) {
         </div>
       </div>
     </div>
-  )
+  );
 }

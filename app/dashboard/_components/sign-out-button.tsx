@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { signOut } from "../../lib/auth-client"
+import { signOut } from "../../lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { LogoutIcon } from "@hugeicons/core-free-icons";
 
 export function SignOutButton() {
   return (
-    <button
-      onClick={() => signOut()}
-      className="w-full py-2 px-4 border rounded-md hover:bg-accent"
-    >
-      Sign Out
-    </button>
-  )
+    <Button variant="ghost" onClick={() => signOut()}>
+      <HugeiconsIcon icon={LogoutIcon} />
+    </Button>
+  );
 }

@@ -1,60 +1,144 @@
-import { ReactNode } from "react"
-import Link from "next/link"
-import { getSession } from "../lib/auth"
-import { SignOutButton } from "./_components/sign-out-button"
-import { ModeToggle } from "@/components/ui/mode-toggle"
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSession } from "../lib/auth-client";
+import { SignOutButton } from "./_components/sign-out-button";
+import { ModeToggle } from "@/components/ui/mode-toggle";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  DashboardCircleIcon,
+  ReceiptTextIcon,
+  WalletIcon,
+  MoneyIcon,
+  ChartIcon,
+  LogoutIcon,
+} from "@hugeicons/core-free-icons";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard" },
-  { name: "Receipts", href: "/dashboard/receipts" },
-  { name: "Expenses", href: "/dashboard/expenses" },
-  { name: "Budgets", href: "/dashboard/budgets" },
-  { name: "Reports", href: "/dashboard/reports" },
-]
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+    icon: DashboardCircleIcon,
+  },
+  {
+    name: "Receipts",
+    href: "/dashboard/receipts",
+    icon: ReceiptTextIcon,
+  },
+  {
+    name: "Expenses",
+    href: "/dashboard/expenses",
+    icon: MoneyIcon,
+  },
+  {
+    name: "Budgets",
+    href: "/dashboard/budgets",
+    icon: WalletIcon,
+  },
+  {
+    name: "Reports",
+    href: "/dashboard/reports",
+    icon: ChartIcon,
+  },
+];
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
-  children: ReactNode
+  children: React.ReactNode;
 }) {
-  const session = await getSession()
+  const session = useSession();
+  const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <aside className="w-64 border-r bg-card">
-        <div className="p-6">
-          <h1 className="text-xl font-bold">AI Expense Manager</h1>
-        </div>
-        <nav className="px-4 space-y-1">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="block px-3 py-2 rounded-md hover:bg-accent"
+    <SidebarProvider>
+      <Sidebar variant="inset" collapsible="icon">
+        <SidebarHeader>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              {item.name}
-            </Link>
-          ))}
-        </nav>
-        <div className="absolute bottom-0 w-64 p-4 border-t">
-          <SignOutButton />
-        </div>
-      </aside>
-
-      <div className="flex-1">
-        <header className="border-b">
-          <div className="container mx-auto py-4 flex justify-between items-center">
-            <div></div>
-            <div className="flex items-center gap-4">
-              <ModeToggle />
-              <span className="text-sm text-muted-foreground">
-                {session?.user?.email}
-              </span>
-            </div>
-          </div>
+              <Link href={"/"}>
+                <HugeiconsIcon icon={ReceiptTextIcon} />
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarMenu>
+              {navigation.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/dashboard" &&
+                    pathname.startsWith(item.href));
+                return (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <Link href={item.href}>
+                        <HugeiconsIcon icon={item.icon} />
+                        <span>{item.name}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuButton size={"lg"}>
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarImage
+                  src={session.data?.user.image!}
+                  alt={session.data?.user.name}
+                />
+                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+              </Avatar>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">
+                  {session.data?.user.name}
+                </span>
+                <span className="truncate text-xs">
+                  {session.data?.user.email}
+                </span>
+              </div>
+            </SidebarMenuButton>
+            <SidebarMenuButton asChild>
+              <SignOutButton />
+            </SidebarMenuButton>
+          </SidebarMenu>
+        </SidebarFooter>
+        <SidebarRail />
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
         </header>
-        <main className="container mx-auto py-8">{children}</main>
-      </div>
-    </div>
-  )
+        <main>
+          <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
 }
