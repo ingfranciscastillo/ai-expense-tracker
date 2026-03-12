@@ -4,6 +4,7 @@ import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { createExpenseFromReceipt } from "../../../../lib/actions/receipts";
 import { createExpenseFromReceiptSchema } from "../../../../lib/validations/receipt";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,8 +114,8 @@ export function ReviewForm({
         typeof initialData.totalAmount === "number"
           ? initialData.totalAmount
           : initialData.totalAmount
-          ? parseFloat(initialData.totalAmount as string)
-          : 0,
+            ? parseFloat(initialData.totalAmount as string)
+            : 0,
       taxAmount:
         initialData.taxAmount !== null
           ? typeof initialData.taxAmount === "number"
@@ -132,9 +133,11 @@ export function ReviewForm({
       const result = await createExpenseFromReceipt(value, userId);
 
       if (result.error) {
+        toast.error(result.error);
         throw new Error(result.error);
       }
 
+      toast.success("Gasto creado desde el recibo exitosamente");
       router.push("/dashboard/expenses");
     },
   });
@@ -147,7 +150,7 @@ export function ReviewForm({
       }}
     >
       <FieldSet>
-        <FieldGroup className="space-y-6">
+        <FieldGroup>
           <form.Field
             name="merchant"
             validators={{
@@ -244,9 +247,7 @@ export function ReviewForm({
                     onBlur={field.handleBlur}
                     onChange={(e) =>
                       field.handleChange(
-                        e.target.value
-                          ? parseFloat(e.target.value)
-                          : undefined
+                        e.target.value ? parseFloat(e.target.value) : undefined,
                       )
                     }
                   />
@@ -407,7 +408,9 @@ export function ReviewForm({
               disabled={form.state.isSubmitting}
               className="flex-1"
             >
-              {form.state.isSubmitting ? "Creating..." : "Confirm & Create Expense"}
+              {form.state.isSubmitting
+                ? "Creating..."
+                : "Confirm & Create Expense"}
             </Button>
             <Button
               type="button"

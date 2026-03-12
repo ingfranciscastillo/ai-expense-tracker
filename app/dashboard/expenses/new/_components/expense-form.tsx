@@ -3,6 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { createExpense } from "../../../../lib/actions/expenses";
 import { createExpenseManualSchema } from "../../../../lib/validations/receipt";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,9 +100,11 @@ export function ExpenseForm({ userId, onSuccess }: ExpenseFormProps) {
       const result = await createExpense(value, userId);
 
       if (result.error) {
+        toast.error(result.error);
         throw new Error(result.error);
       }
 
+      toast.success("Gasto creado exitosamente");
       onSuccess?.();
     },
   });
@@ -114,7 +117,7 @@ export function ExpenseForm({ userId, onSuccess }: ExpenseFormProps) {
       }}
     >
       <FieldSet>
-        <FieldGroup className="space-y-6">
+        <FieldGroup>
           <div className="grid grid-cols-2 gap-4">
             <form.Field
               name="merchant"

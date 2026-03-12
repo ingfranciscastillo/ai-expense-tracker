@@ -22,7 +22,23 @@ export const createExpenseFromReceiptSchema = z.object({
   expenseDate: z.string().min(1, "La fecha es obligatoria"),
   totalAmount: z.coerce.number().positive("El monto debe ser positivo"),
   taxAmount: z.coerce.number().min(0).optional(),
-  currency: z.enum(["USD", "EUR", "MXN", "COP", "ARS", "OTHER"]).default("USD"),
+  currency: z.enum([
+    "USD",
+    "EUR",
+    "GBP",
+    "JPY",
+    "CNY",
+    "CAD",
+    "AUD",
+    "BRL",
+    "CLP",
+    "COP",
+    "ARS",
+    "PEN",
+    "UYU",
+    "MXN",
+    "OTHER",
+  ]).default("USD"),
   paymentMethod: z
     .enum([
       "efectivo",
@@ -56,7 +72,23 @@ export const createExpenseManualSchema = z.object({
   expenseDate: z.string().min(1, "La fecha es obligatoria"),
   totalAmount: z.coerce.number().positive("El monto debe ser positivo"),
   taxAmount: z.coerce.number().min(0).optional(),
-  currency: z.enum(["USD", "EUR", "MXN", "COP", "ARS", "OTHER"]).default("USD"),
+  currency: z.enum([
+    "USD",
+    "EUR",
+    "GBP",
+    "JPY",
+    "CNY",
+    "CAD",
+    "AUD",
+    "BRL",
+    "CLP",
+    "COP",
+    "ARS",
+    "PEN",
+    "UYU",
+    "MXN",
+    "OTHER",
+  ]).default("USD"),
   paymentMethod: z
     .enum([
       "efectivo",
@@ -92,7 +124,23 @@ export const updateExpenseSchema = z.object({
   totalAmount: z.coerce.number().positive().optional(),
   taxAmount: z.coerce.number().min(0).optional(),
   currency: z
-    .enum(["USD", "EUR", "MXN", "COP", "ARS", "OTHER"])
+    .enum([
+      "USD",
+      "EUR",
+      "GBP",
+      "JPY",
+      "CNY",
+      "CAD",
+      "AUD",
+      "BRL",
+      "CLP",
+      "COP",
+      "ARS",
+      "PEN",
+      "UYU",
+      "MXN",
+      "OTHER",
+    ])
     .optional(),
   paymentMethod: z
     .enum([
@@ -123,6 +171,60 @@ export const updateExpenseSchema = z.object({
   deductibleNotes: z.string().optional(),
 })
 
+export const updateReceiptSchema = z.object({
+  id: z.string().uuid(),
+  merchant: z.string().optional(),
+  expenseDate: z.string().optional(),
+  totalAmount: z.coerce.number().positive().optional(),
+  taxAmount: z.coerce.number().min(0).optional(),
+  currency: z
+    .enum([
+      "USD",
+      "EUR",
+      "GBP",
+      "JPY",
+      "CNY",
+      "CAD",
+      "AUD",
+      "BRL",
+      "CLP",
+      "COP",
+      "ARS",
+      "PEN",
+      "UYU",
+      "MXN",
+      "OTHER",
+    ])
+    .optional(),
+  paymentMethod: z
+    .enum([
+      "efectivo",
+      "tarjeta_debito",
+      "tarjeta_credito",
+      "transferencia",
+      "otro",
+      "desconocido",
+    ])
+    .optional(),
+  category: z
+    .enum([
+      "comida",
+      "transporte",
+      "supermercado",
+      "salud",
+      "entretenimiento",
+      "software",
+      "educacion",
+      "hogar",
+      "servicios",
+      "trabajo",
+      "otros",
+    ])
+    .optional(),
+  status: z.enum(["pending", "processing", "completed", "failed"]).optional(),
+  reviewedAt: z.boolean().optional(),
+})
+
 export const createBudgetSchema = z.object({
   isGlobal: z.boolean(),
   category: z
@@ -143,7 +245,23 @@ export const createBudgetSchema = z.object({
   month: z.coerce.number().min(1).max(12),
   year: z.coerce.number().min(2020).max(2100),
   limitAmount: z.coerce.number().positive("El límite debe ser positivo"),
-  currency: z.enum(["USD", "EUR", "MXN", "COP", "ARS", "OTHER"]).default("USD"),
+  currency: z.enum([
+    "USD",
+    "EUR",
+    "GBP",
+    "JPY",
+    "CNY",
+    "CAD",
+    "AUD",
+    "BRL",
+    "CLP",
+    "COP",
+    "ARS",
+    "PEN",
+    "UYU",
+    "MXN",
+    "OTHER",
+  ]).default("USD"),
 })
 
 export const exportSchema = z.object({

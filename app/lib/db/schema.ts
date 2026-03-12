@@ -41,9 +41,18 @@ export const expenseCategoryEnum = pgEnum("expense_category", [
 export const currencyEnum = pgEnum("currency", [
   "USD",
   "EUR",
-  "MXN",
+  "GBP",
+  "JPY",
+  "CNY",
+  "CAD",
+  "AUD",
+  "BRL",
+  "CLP",
   "COP",
   "ARS",
+  "PEN",
+  "UYU",
+  "MXN",
   "OTHER",
 ]);
 

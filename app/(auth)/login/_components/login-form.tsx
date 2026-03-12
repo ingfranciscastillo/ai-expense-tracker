@@ -5,6 +5,7 @@ import { signIn } from "../../../lib/auth-client"
 import { loginSchema } from "../../../lib/validations/auth"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -40,8 +41,11 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       })
 
       if (result.error) {
-        setServerError(result.error.message ?? "An error occurred")
+        const errorMessage = result.error.message ?? "Credenciales inválidas"
+        setServerError(errorMessage)
+        toast.error(errorMessage)
       } else {
+        toast.success("¡Bienvenido de nuevo!")
         router.push("/dashboard")
         router.refresh()
         onSuccess?.()

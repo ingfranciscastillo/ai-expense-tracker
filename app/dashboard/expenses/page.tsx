@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "../../lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -13,8 +13,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowRight01Icon, WalletIcon } from "@hugeicons/core-free-icons";
+import { ArrowRight01Icon, Edit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { EditExpenseModal } from "./_components/edit-expense-modal";
 
 const categories = [
   { value: "", label: "All Categories" },
@@ -35,6 +36,7 @@ export default function ExpensesPage() {
   const { data: session, isPending } = useSession();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingExpense, setEditingExpense] = useState<any | null>(null);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -120,6 +122,7 @@ export default function ExpensesPage() {
                 <TableHead>Category</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead>Deductible</TableHead>
+                <TableHead className="w-20"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -138,12 +141,34 @@ export default function ExpensesPage() {
                     {expense.currency} {expense.totalAmount}
                   </TableCell>
                   <TableCell>{expense.isDeductible ? "Yes" : "No"}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setEditingExpense(expense)}
+                    >
+                      <HugeiconsIcon icon={Edit01Icon} size={18} />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         )}
       </Card>
+
+      {editingExpense && (
+        <EditExpenseModal
+          expense={editingExpense}
+          open={!!editingExpense}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingExpense(null);
+              fetchExpenses(session.user.id);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

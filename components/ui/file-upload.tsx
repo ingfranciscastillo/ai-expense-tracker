@@ -4,11 +4,12 @@ import {
   FileArchiveIcon,
   FileAudioIcon,
   FileCodeIcon,
-  FileCogIcon,
-  FileIcon,
-  FileTextIcon,
+  FileManagementIcon,
+  FileEmpty02Icon,
+  File02Icon,
   FileVideoIcon,
-} from "lucide-react";
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Direction as DirectionPrimitive,
   Slot as SlotPrimitive,
@@ -41,18 +42,18 @@ function getFileIcon(file: File) {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
 
   if (type.startsWith("video/")) {
-    return <FileVideoIcon />;
+    return <HugeiconsIcon icon={FileVideoIcon} size={40} />;
   }
 
   if (type.startsWith("audio/")) {
-    return <FileAudioIcon />;
+    return <HugeiconsIcon icon={FileAudioIcon} size={40} />;
   }
 
   if (
     type.startsWith("text/") ||
     ["txt", "md", "rtf", "pdf"].includes(extension)
   ) {
-    return <FileTextIcon />;
+    return <HugeiconsIcon icon={File02Icon} size={40} />;
   }
 
   if (
@@ -74,21 +75,21 @@ function getFileIcon(file: File) {
       "cs",
     ].includes(extension)
   ) {
-    return <FileCodeIcon />;
+    return <HugeiconsIcon icon={FileCodeIcon} size={40} />;
   }
 
   if (["zip", "rar", "7z", "tar", "gz", "bz2"].includes(extension)) {
-    return <FileArchiveIcon />;
+    return <HugeiconsIcon icon={FileArchiveIcon} size={40} />;
   }
 
   if (
     ["exe", "msi", "app", "apk", "deb", "rpm"].includes(extension) ||
     type.startsWith("application/")
   ) {
-    return <FileCogIcon />;
+    return <HugeiconsIcon icon={FileManagementIcon} size={40} />;
   }
 
-  return <FileIcon />;
+  return <HugeiconsIcon icon={FileEmpty02Icon} size={40} />;
 }
 
 type Direction = "ltr" | "rtl";

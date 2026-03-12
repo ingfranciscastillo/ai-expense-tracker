@@ -5,6 +5,7 @@ import { budgets, alerts } from "../db/schema"
 import { createBudgetSchema } from "../validations/receipt"
 import { eq, and, asc } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 
 export async function getBudgets(userId: string) {
   return db
@@ -50,7 +51,7 @@ export async function createBudget(data: unknown, userId: string) {
     const validated = createBudgetSchema.parse(data)
 
     if (!userId) {
-      return { error: "Not authenticated" }
+      return { error: "No has iniciado sesión. Por favor inicia sesión para crear un presupuesto." }
     }
 
     const existingBudget = await db.query.budgets.findFirst({
@@ -65,7 +66,7 @@ export async function createBudget(data: unknown, userId: string) {
     })
 
     if (existingBudget) {
-      return { error: "Budget already exists for this period" }
+      return { error: "Ya existe un presupuesto para este período y categoría." }
     }
 
     const [budget] = await db
@@ -81,22 +82,34 @@ export async function createBudget(data: unknown, userId: string) {
       })
       .returning()
 
-    revalidatePath("/budgets")
+    revalidatePath("/dashboard/budgets")
     return { success: true, budget }
   } catch (error) {
     console.error("Create budget error:", error)
-    return { error: "Failed to create budget" }
+    if (error instanceof z.ZodError) {
+      const messages = error.errors.map(e => e.message).join(", ")
+      return { error: `Datos inválidos: ${messages}` }
+    }
+    return { error: "No se pudo crear el presupuesto. Por favor intenta de nuevo." }
   }
 }
 
 export async function deleteBudget(id: string) {
   try {
+    const existingBudget = await db.query.budgets.findFirst({
+      where: eq(budgets.id, id),
+    })
+
+    if (!existingBudget) {
+      return { error: "El presupuesto que intentas eliminar no existe." }
+    }
+
     await db.delete(budgets).where(eq(budgets.id, id))
-    revalidatePath("/budgets")
+    revalidatePath("/dashboard/budgets")
     return { success: true }
   } catch (error) {
     console.error("Delete budget error:", error)
-    return { error: "Failed to delete budget" }
+    return { error: "No se pudo eliminar el presupuesto. Por favor intenta de nuevo." }
   }
 }
 

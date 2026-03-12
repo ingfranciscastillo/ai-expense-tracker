@@ -14,8 +14,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UploadIcon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { UploadIcon, ArrowRight01Icon, Edit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { EditReceiptModal } from "./_components/edit-receipt-modal";
 
 const categoryLabels: Record<string, string> = {
   comida: "Comida",
@@ -35,6 +36,7 @@ export default function ReceiptsPage() {
   const { data: session, isPending } = useSession();
   const [receipts, setReceipts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingReceipt, setEditingReceipt] = useState<any | null>(null);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -145,7 +147,7 @@ export default function ReceiptsPage() {
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Confidence</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="w-32">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -179,13 +181,24 @@ export default function ReceiptsPage() {
                     {getConfidenceLabel(receipt.confidenceScore)}
                   </TableCell>
                   <TableCell>
-                    {receipt.status === "completed" && (
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/receipts/${receipt.id}`}>
-                          Review
-                        </Link>
-                      </Button>
-                    )}
+                    <div className="flex gap-1">
+                      {receipt.status === "completed" && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditingReceipt(receipt)}
+                          >
+                            <HugeiconsIcon icon={Edit01Icon} size={18} />
+                          </Button>
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/dashboard/receipts/${receipt.id}`}>
+                              Review
+                            </Link>
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -193,6 +206,19 @@ export default function ReceiptsPage() {
           </Table>
         )}
       </Card>
+
+      {editingReceipt && (
+        <EditReceiptModal
+          receipt={editingReceipt}
+          open={!!editingReceipt}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingReceipt(null);
+              fetchReceipts(session.user.id);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

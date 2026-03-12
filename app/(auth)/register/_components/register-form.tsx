@@ -5,6 +5,7 @@ import { signUp } from "../../../lib/auth-client"
 import { registerSchema } from "../../../lib/validations/auth"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,8 +43,11 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       })
 
       if (result.error) {
-        setServerError(result.error.message ?? "An error occurred")
+        const errorMessage = result.error.message ?? "No se pudo crear la cuenta"
+        setServerError(errorMessage)
+        toast.error(errorMessage)
       } else {
+        toast.success("¡Cuenta creada exitosamente!")
         router.push("/dashboard")
         router.refresh()
         onSuccess?.()

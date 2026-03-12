@@ -5,6 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { Upload01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { toast } from "sonner";
 import { uploadReceipt } from "../../../../lib/actions/receipts";
 import { uploadReceiptSchema } from "../../../../lib/validations/receipt";
 
@@ -48,6 +49,7 @@ export function UploadForm({ userId }: UploadFormProps) {
       
       if (!value.file) {
         setError("Por favor selecciona un archivo");
+        toast.error("Por favor selecciona un archivo");
         return;
       }
 
@@ -62,9 +64,11 @@ export function UploadForm({ userId }: UploadFormProps) {
           errorMessage += ` (${JSON.stringify(result.details)})`;
         }
         setError(errorMessage);
+        toast.error(errorMessage);
         throw new Error(result.error);
       }
 
+      toast.success("Recibo subido exitosamente");
       setSuccess(true);
       setTimeout(() => {
         router.push("/dashboard/receipts");

@@ -5,6 +5,7 @@ import { expenses, receipts } from "../db/schema"
 import { createExpenseManualSchema, updateExpenseSchema } from "../validations/receipt"
 import { eq, and, gte, lte } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 
 export async function getExpenses(userId: string, filters?: {
   startDate?: string
@@ -50,7 +51,7 @@ export async function createExpense(data: unknown, userId: string) {
     const validated = createExpenseManualSchema.parse(data)
 
     if (!userId) {
-      return { error: "Not authenticated" }
+      return { error: "No has iniciado sesión. Por favor inicia sesión para crear un gasto." }
     }
 
     const [expense] = await db
@@ -74,13 +75,25 @@ export async function createExpense(data: unknown, userId: string) {
     return { success: true, expense }
   } catch (error) {
     console.error("Create expense error:", error)
-    return { error: "Failed to create expense" }
+    if (error instanceof z.ZodError) {
+      const messages = error.errors.map(e => e.message).join(", ")
+      return { error: `Datos inválidos: ${messages}` }
+    }
+    return { error: "No se pudo crear el gasto. Por favor intenta de nuevo." }
   }
 }
 
 export async function updateExpense(data: unknown) {
   try {
     const validated = updateExpenseSchema.parse(data)
+
+    const existingExpense = await db.query.expenses.findFirst({
+      where: eq(expenses.id, validated.id),
+    })
+
+    if (!existingExpense) {
+      return { error: "El gasto que intentas editar no existe." }
+    }
 
     const [expense] = await db
       .update(expenses)
@@ -100,21 +113,33 @@ export async function updateExpense(data: unknown) {
       .where(eq(expenses.id, validated.id))
       .returning()
 
-    revalidatePath("/expenses")
+    revalidatePath("/dashboard/expenses")
     return { success: true, expense }
   } catch (error) {
     console.error("Update expense error:", error)
-    return { error: "Failed to update expense" }
+    if (error instanceof z.ZodError) {
+      const messages = error.errors.map(e => e.message).join(", ")
+      return { error: `Datos inválidos: ${messages}` }
+    }
+    return { error: "No se pudo actualizar el gasto. Por favor intenta de nuevo." }
   }
 }
 
 export async function deleteExpense(id: string) {
   try {
+    const existingExpense = await db.query.expenses.findFirst({
+      where: eq(expenses.id, id),
+    })
+
+    if (!existingExpense) {
+      return { error: "El gasto que intentas eliminar no existe." }
+    }
+
     await db.delete(expenses).where(eq(expenses.id, id))
-    revalidatePath("/expenses")
+    revalidatePath("/dashboard/expenses")
     return { success: true }
   } catch (error) {
     console.error("Delete expense error:", error)
-    return { error: "Failed to delete expense" }
+    return { error: "No se pudo eliminar el gasto. Por favor intenta de nuevo." }
   }
 }

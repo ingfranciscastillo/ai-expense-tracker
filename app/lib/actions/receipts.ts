@@ -5,9 +5,10 @@ import { receipts, expenses } from "../db/schema"
 import { uploadToCloudinary } from "../storage/cloudinary"
 import { extractDataFromReceipt } from "../ai/extraction"
 import type { ExtractionResult } from "../ai/prompts"
-import { createExpenseFromReceiptSchema } from "../validations/receipt"
+import { createExpenseFromReceiptSchema, updateReceiptSchema } from "../validations/receipt"
 import { eq, desc } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 
 export async function getReceipts(userId: string) {
   return db
@@ -187,7 +188,7 @@ export async function createExpenseFromReceipt(data: unknown, userId: string) {
     const validated = createExpenseFromReceiptSchema.parse(data)
 
     if (!userId) {
-      return { error: "Not authenticated" }
+      return { error: "No has iniciado sesión. Por favor inicia sesión." }
     }
 
     const receipt = await db.query.receipts.findFirst({
@@ -195,7 +196,7 @@ export async function createExpenseFromReceipt(data: unknown, userId: string) {
     })
 
     if (!receipt) {
-      return { error: "Receipt not found" }
+      return { error: "El recibo no existe o ya fue eliminado." }
     }
 
     const [expense] = await db
@@ -218,15 +219,70 @@ export async function createExpenseFromReceipt(data: unknown, userId: string) {
 
     await db
       .update(receipts)
-      .set({ reviewedAt: new Date() })
+      .set({ 
+        merchant: validated.merchant,
+        expenseDate: new Date(validated.expenseDate),
+        totalAmount: validated.totalAmount.toString(),
+        taxAmount: validated.taxAmount?.toString(),
+        currency: validated.currency,
+        paymentMethod: validated.paymentMethod,
+        categorySuggestion: validated.category,
+        reviewedAt: new Date(),
+        updatedAt: new Date(),
+      })
       .where(eq(receipts.id, validated.receiptId))
 
-    revalidatePath("/receipts")
-    revalidatePath("/expenses")
+    revalidatePath("/dashboard/receipts")
+    revalidatePath("/dashboard/expenses")
     return { success: true, expense }
   } catch (error) {
     console.error("Create expense error:", error)
-    return { error: "Failed to create expense" }
+    if (error instanceof z.ZodError) {
+      const messages = error.errors.map(e => e.message).join(", ")
+      return { error: `Datos inválidos: ${messages}` }
+    }
+    return { error: "No se pudo crear el gasto desde el recibo. Por favor intenta de nuevo." }
+  }
+}
+
+export async function updateReceipt(data: unknown) {
+  try {
+    const validated = updateReceiptSchema.parse(data)
+
+    const existingReceipt = await db.query.receipts.findFirst({
+      where: eq(receipts.id, validated.id),
+    })
+
+    if (!existingReceipt) {
+      return { error: "El recibo no existe o ya fue eliminado." }
+    }
+
+    const [receipt] = await db
+      .update(receipts)
+      .set({
+        ...(validated.merchant && { merchant: validated.merchant }),
+        ...(validated.expenseDate && { expenseDate: new Date(validated.expenseDate) }),
+        ...(validated.totalAmount && { totalAmount: validated.totalAmount.toString() }),
+        ...(validated.taxAmount && { taxAmount: validated.taxAmount.toString() }),
+        ...(validated.currency && { currency: validated.currency }),
+        ...(validated.paymentMethod && { paymentMethod: validated.paymentMethod }),
+        ...(validated.category && { categorySuggestion: validated.category }),
+        ...(validated.status && { status: validated.status }),
+        ...(validated.reviewedAt === true && { reviewedAt: new Date() }),
+        updatedAt: new Date(),
+      })
+      .where(eq(receipts.id, validated.id))
+      .returning()
+
+    revalidatePath("/dashboard/receipts")
+    return { success: true, receipt }
+  } catch (error) {
+    console.error("Update receipt error:", error)
+    if (error instanceof z.ZodError) {
+      const messages = error.errors.map(e => e.message).join(", ")
+      return { error: `Datos inválidos: ${messages}` }
+    }
+    return { error: "No se pudo actualizar el recibo. Por favor intenta de nuevo." }
   }
 }
 

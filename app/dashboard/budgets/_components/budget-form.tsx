@@ -3,6 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { createBudget } from "../../../lib/actions/budgets";
 import { createBudgetSchema } from "../../../lib/validations/receipt";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,9 +85,11 @@ export function BudgetForm({ userId, onSuccess }: BudgetFormProps) {
       const result = await createBudget(value, userId);
 
       if (result.error) {
+        toast.error(result.error);
         throw new Error(result.error);
       }
 
+      toast.success("Presupuesto creado exitosamente");
       onSuccess?.();
     },
   });
