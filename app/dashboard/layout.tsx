@@ -31,6 +31,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getUserInitials } from "@/lib/user-utils";
 
 const navigation = [
   {
@@ -113,7 +114,9 @@ export default function DashboardLayout({
                   src={session.data?.user.image!}
                   alt={session.data?.user.name}
                 />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {getUserInitials(session.data?.user.name)}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">

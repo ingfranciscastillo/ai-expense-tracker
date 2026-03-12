@@ -90,7 +90,7 @@ export function DashboardContent({ user }: DashboardContentProps) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-6xl mx-auto p-6 space-y-6 w-full">
       <div>
         <h2 className="text-3xl font-bold">Welcome back!</h2>
         <p className="text-muted-foreground mt-2">{user?.name ?? "User"}</p>
