@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createBudget } from "../../lib/actions/budgets";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "../../lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -12,16 +11,6 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -32,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { AddIcon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { BudgetForm } from "./_components/budget-form";
 
 const categories = [
   { value: "comida", label: "Comida" },
@@ -62,25 +52,12 @@ const months = [
   { value: 12, label: "December" },
 ];
 
-const currencies = [
-  { value: "USD", label: "USD - US Dollar" },
-  { value: "EUR", label: "EUR - Euro" },
-  { value: "MXN", label: "MXN - Mexican Peso" },
-  { value: "COP", label: "COP - Colombian Peso" },
-  { value: "ARS", label: "ARS - Argentine Peso" },
-];
-
 export default function BudgetsPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [budgets, setBudgets] = useState<any[]>([]);
   const [loadingBudgets, setLoadingBudgets] = useState(true);
-
-  const currentMonth = new Date().getMonth() + 1;
-  const currentYear = new Date().getFullYear();
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -102,39 +79,6 @@ export default function BudgetsPage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    if (!session?.user?.id) {
-      setError("Not authenticated");
-      setIsLoading(false);
-      return;
-    }
-
-    const formData = new FormData(e.currentTarget);
-
-    const data = {
-      isGlobal: formData.get("isGlobal") === "on",
-      category: formData.get("category") || undefined,
-      month: parseInt(formData.get("month") as string),
-      year: parseInt(formData.get("year") as string),
-      limitAmount: parseFloat(formData.get("limitAmount") as string),
-      currency: formData.get("currency"),
-    };
-
-    const result = await createBudget(data, session.user.id);
-
-    if (result.error) {
-      setError(result.error);
-      setIsLoading(false);
-    } else {
-      setShowForm(false);
-      fetchBudgets(session.user.id);
-    }
-  };
-
   const getCategoryLabel = (category: string | null) => {
     if (!category) return "Global";
     return categories.find((c) => c.value === category)?.label || category;
@@ -142,6 +86,13 @@ export default function BudgetsPage() {
 
   const getMonthLabel = (month: number) => {
     return months.find((m) => m.value === month)?.label || "";
+  };
+
+  const handleFormSuccess = () => {
+    setShowForm(false);
+    if (session?.user?.id) {
+      fetchBudgets(session.user.id);
+    }
   };
 
   return (
@@ -157,7 +108,7 @@ export default function BudgetsPage() {
         </Button>
       </div>
 
-      {showForm && (
+      {showForm && session?.user?.id && (
         <Card>
           <CardHeader>
             <CardTitle>Create Budget</CardTitle>
@@ -166,104 +117,10 @@ export default function BudgetsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
-                  {error}
-                </div>
-              )}
-
-              <div className="flex items-center gap-2">
-                <Checkbox id="isGlobal" name="isGlobal" defaultChecked />
-                <Label htmlFor="isGlobal" className="text-sm font-medium">
-                  Global budget (for all categories)
-                </Label>
-              </div>
-
-              <div>
-                <Label htmlFor="category">Category (if not global)</Label>
-                <Select name="category">
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="month">Month</Label>
-                  <Select name="month" defaultValue={String(currentMonth)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {months.map((m) => (
-                        <SelectItem key={m.value} value={String(m.value)}>
-                          {m.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="year">Year</Label>
-                  <Select name="year" defaultValue={String(currentYear)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={String(currentYear)}>
-                        {currentYear}
-                      </SelectItem>
-                      <SelectItem value={String(currentYear + 1)}>
-                        {currentYear + 1}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="currency">Currency</Label>
-                  <Select name="currency" defaultValue="USD">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencies.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          {c.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="limitAmount">Limit Amount</Label>
-                <Input
-                  id="limitAmount"
-                  name="limitAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? "Creating..." : "Create Budget"}
-              </Button>
-            </form>
+            <BudgetForm
+              userId={session.user.id}
+              onSuccess={handleFormSuccess}
+            />
           </CardContent>
         </Card>
       )}
