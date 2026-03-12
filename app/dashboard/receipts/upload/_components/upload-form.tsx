@@ -53,6 +53,8 @@ export function UploadForm({ userId }: UploadFormProps) {
         return;
       }
 
+      toast.loading("Subiendo recibo...", { id: "upload" });
+
       const formData = new FormData();
       formData.append("file", value.file);
 
@@ -64,11 +66,11 @@ export function UploadForm({ userId }: UploadFormProps) {
           errorMessage += ` (${JSON.stringify(result.details)})`;
         }
         setError(errorMessage);
-        toast.error(errorMessage);
+        toast.error(errorMessage, { id: "upload" });
         throw new Error(result.error);
       }
 
-      toast.success("Recibo subido exitosamente");
+      toast.success("Recibo subido exitosamente", { id: "upload" });
       setSuccess(true);
       setTimeout(() => {
         router.push("/dashboard/receipts");
@@ -160,7 +162,7 @@ export function UploadForm({ userId }: UploadFormProps) {
                         </Button>
                       </FileUploadTrigger>
                     </FileUploadDropzone>
-                    <FileUploadList>
+                    <FileUploadList forceMount>
                       {files.map((file, index) => (
                         <FileUploadItem key={index} value={file}>
                           <div className="flex w-full items-start gap-3">

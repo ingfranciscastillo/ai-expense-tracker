@@ -2,7 +2,7 @@
 
 import { db } from "../db"
 import { budgets, alerts } from "../db/schema"
-import { createBudgetSchema } from "../validations/receipt"
+import { createBudgetSchema, updateBudgetSchema } from "../validations/receipt"
 import { eq, and, asc } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
@@ -110,6 +110,44 @@ export async function deleteBudget(id: string) {
   } catch (error) {
     console.error("Delete budget error:", error)
     return { error: "No se pudo eliminar el presupuesto. Por favor intenta de nuevo." }
+  }
+}
+
+export async function updateBudget(data: unknown) {
+  try {
+    const validated = updateBudgetSchema.parse(data)
+
+    const existingBudget = await db.query.budgets.findFirst({
+      where: eq(budgets.id, validated.id),
+    })
+
+    if (!existingBudget) {
+      return { error: "El presupuesto que intentas editar no existe." }
+    }
+
+    const [budget] = await db
+      .update(budgets)
+      .set({
+        ...(validated.isGlobal !== undefined && { isGlobal: validated.isGlobal }),
+        ...(validated.category !== undefined && { category: validated.isGlobal ? null : validated.category }),
+        ...(validated.month && { month: validated.month }),
+        ...(validated.year && { year: validated.year }),
+        ...(validated.limitAmount && { limitAmount: validated.limitAmount.toString() }),
+        ...(validated.currency && { currency: validated.currency }),
+        updatedAt: new Date(),
+      })
+      .where(eq(budgets.id, validated.id))
+      .returning()
+
+    revalidatePath("/dashboard/budgets")
+    return { success: true, budget }
+  } catch (error) {
+    console.error("Update budget error:", error)
+    if (error instanceof z.ZodError) {
+      const messages = error.errors.map(e => e.message).join(", ")
+      return { error: `Datos inválidos: ${messages}` }
+    }
+    return { error: "No se pudo actualizar el presupuesto. Por favor intenta de nuevo." }
   }
 }
 

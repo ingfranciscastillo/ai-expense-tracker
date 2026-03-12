@@ -1,14 +1,22 @@
 "use client";
 
 import { signOut } from "../../lib/auth-client";
-import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { LogoutIcon } from "@hugeicons/core-free-icons";
+import { useRouter } from "next/navigation";
 
 export function SignOutButton() {
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/");
+  };
+
   return (
-    <Button variant="ghost" onClick={() => signOut()}>
-      <HugeiconsIcon icon={LogoutIcon} />
-    </Button>
+    <button
+      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium hover:bg-accent"
+      onClick={handleSignOut}
+    >
+      Cerrar sesión
+    </button>
   );
 }

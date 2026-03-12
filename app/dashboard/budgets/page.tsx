@@ -19,9 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AddIcon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { AddIcon, ArrowRight01Icon, Edit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { BudgetForm } from "./_components/budget-form";
+import { EditBudgetModal } from "./_components/edit-budget-modal";
 
 const categories = [
   { value: "comida", label: "Comida" },
@@ -58,6 +59,7 @@ export default function BudgetsPage() {
   const [showForm, setShowForm] = useState(false);
   const [budgets, setBudgets] = useState<any[]>([]);
   const [loadingBudgets, setLoadingBudgets] = useState(true);
+  const [editingBudget, setEditingBudget] = useState<any | null>(null);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -153,6 +155,7 @@ export default function BudgetsPage() {
                 <TableHead className="text-right">Limit</TableHead>
                 <TableHead className="text-right">Used</TableHead>
                 <TableHead>Progress</TableHead>
+                <TableHead className="w-20"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -177,12 +180,34 @@ export default function BudgetsPage() {
                       ></div>
                     </div>
                   </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setEditingBudget(budget)}
+                    >
+                      <HugeiconsIcon icon={Edit01Icon} size={18} />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         )}
       </Card>
+
+      {editingBudget && (
+        <EditBudgetModal
+          budget={editingBudget}
+          open={!!editingBudget}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingBudget(null);
+              fetchBudgets(session?.user?.id!);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

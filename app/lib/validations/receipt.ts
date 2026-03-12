@@ -225,6 +225,46 @@ export const updateReceiptSchema = z.object({
   reviewedAt: z.boolean().optional(),
 })
 
+export const updateBudgetSchema = z.object({
+  id: z.string().uuid(),
+  isGlobal: z.boolean().optional(),
+  category: z
+    .enum([
+      "comida",
+      "transporte",
+      "supermercado",
+      "salud",
+      "entretenimiento",
+      "software",
+      "educacion",
+      "hogar",
+      "servicios",
+      "trabajo",
+      "otros",
+    ])
+    .optional(),
+  month: z.coerce.number().min(1).max(12).optional(),
+  year: z.coerce.number().min(2020).max(2100).optional(),
+  limitAmount: z.coerce.number().positive("El límite debe ser positivo").optional(),
+  currency: z.enum([
+    "USD",
+    "EUR",
+    "GBP",
+    "JPY",
+    "CNY",
+    "CAD",
+    "AUD",
+    "BRL",
+    "CLP",
+    "COP",
+    "ARS",
+    "PEN",
+    "UYU",
+    "MXN",
+    "OTHER",
+  ]).optional(),
+})
+
 export const createBudgetSchema = z.object({
   isGlobal: z.boolean(),
   category: z
