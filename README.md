@@ -1,36 +1,164 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Expense Tracker
 
-## Getting Started
+An intelligent expense tracking application with AI-powered receipt processing, budget management, and comprehensive analytics.
 
-First, run the development server:
+## Features
+
+- **Expense Management**: Create, edit, and delete expenses with categories, payment methods, and tax deductions
+- **AI Receipt Processing**: Upload receipts and let AI extract merchant, amount, and category automatically
+- **Budget Tracking**: Set monthly budgets per category or global budgets with visual progress indicators
+- **Dark/Light Mode**: Full theme support with system preference detection
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+
+## Tech Stack
+
+- **Framework**: Next.js 16 with App Router
+- **Language**: TypeScript
+- **Database**: Neon Serverless PostgreSQL with Drizzle ORM
+- **Authentication**: Better Auth
+- **Forms**: TanStack Form with Zod validation
+- **Data Fetching**: TanStack Query
+- **UI**: shadcn/ui with Tailwind CSS v4
+- **Icons**: Hugeicons
+- **AI**: AI SDK with Groq for receipt processing
+- **File Storage**: Cloudinary for receipt images
+- **Date Handling**: date-fns with Spanish locale
+
+## Prerequisites
+
+- Node.js 18+
+- Neon database account
+- Groq API key (for AI features)
+- Cloudinary account (for file uploads)
+
+## Setup
+
+### 1. Clone and Install
+
+```bash
+npm install
+```
+
+### 2. Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+# Database (Neon)
+DATABASE_URL=your_neon_connection_string
+
+# Auth (Better Auth)
+BETTER_AUTH_SECRET=your_secret_key
+BETTER_AUTH_URL=http://localhost:3000
+
+# AI (Groq)
+GROQ_API_KEY=your_groq_api_key
+
+# Cloudinary
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloud_name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your_upload_preset
+```
+
+### 3. Database Setup
+
+```bash
+# Generate Drizzle migrations
+npm run db:generate
+
+# Run migrations
+npm run db:migrate
+
+# (Optional) Open database studio
+npm run db:studio
+```
+
+### 4. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+app/
+├── dashboard/           # Protected dashboard routes
+│   ├── budgets/       # Budget management
+│   ├── expenses/      # Expense management
+│   ├── receipts/     # Receipt upload and review
+│   ├── reports/      # Analytics and reports
+│   └── settings/     # User settings
+├── api/              # API routes
+├── lib/
+│   ├── actions/      # Server actions
+│   ├── auth-client/  # Auth client
+│   ├── db/          # Database schema and config
+│   ├── queries/     # TanStack Query hooks
+│   └── validations/  # Zod schemas
+└── providers.tsx     # React providers (QueryClient, etc.)
+```
 
-## Learn More
+## Available Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
+| `npm run db:generate` | Generate Drizzle migrations |
+| `npm run db:migrate` | Run database migrations |
+| `npm run db:studio` | Open Drizzle Studio |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Key Features Implementation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Expense Creation
 
-## Deploy on Vercel
+Expenses can be created manually or from uploaded receipts. Each expense includes:
+- Merchant name
+- Description
+- Date
+- Amount and currency
+- Category (10 predefined categories)
+- Payment method
+- Tax deductibility
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Receipt Upload & AI Processing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Upload receipt image (supports JPG, PNG, PDF)
+2. AI extracts: merchant, date, amount, category
+3. User reviews and confirms extracted data
+4. Creates expense from receipt
+
+### Budget Tracking
+
+- Set monthly budgets per category
+- Global budgets apply to all categories
+- Visual progress bar with color indicators:
+  - Green: < 80% used
+  - Yellow: 80-90% used
+  - Red: > 90% used
+
+## Database Schema
+
+Main tables:
+- `users` - User accounts
+- `expenses` - Individual expense records
+- `budgets` - Monthly budget limits
+- `receipts` - Uploaded receipt metadata
+- `alerts` - Budget warning notifications
+
+## Contributing
+
+This is a personal project. For internal modifications:
+
+1. Create a feature branch
+2. Make your changes
+3. Test thoroughly
+4. Create a pull request
+
+## License
+
+Private - All rights reserved
