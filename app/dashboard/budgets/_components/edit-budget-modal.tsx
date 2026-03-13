@@ -2,6 +2,7 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { updateBudget } from "../../../lib/actions/budgets";
 import { updateBudgetSchema } from "../../../lib/validations/receipt";
 import { toast } from "sonner";
@@ -100,12 +101,17 @@ interface EditBudgetModalProps {
 
 export function EditBudgetModal({ budget, open, onOpenChange }: EditBudgetModalProps) {
   const router = useRouter();
+  const [isGlobalBudget, setIsGlobalBudget] = useState(budget.isGlobal);
+
+  useEffect(() => {
+    setIsGlobalBudget(budget.isGlobal);
+  }, [budget.isGlobal, open]);
 
   const form = useForm({
     defaultValues: {
       id: budget.id,
       isGlobal: budget.isGlobal,
-      category: budget.category as Category | undefined,
+      category: (budget.category === null ? undefined : budget.category) as Category | undefined,
       month: budget.month,
       year: budget.year,
       limitAmount: typeof budget.limitAmount === "string" 
@@ -126,8 +132,6 @@ export function EditBudgetModal({ budget, open, onOpenChange }: EditBudgetModalP
       router.refresh();
     },
   });
-
-  const isGlobal = form.getFieldValue("isGlobal");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,7 +160,10 @@ export function EditBudgetModal({ budget, open, onOpenChange }: EditBudgetModalP
                         id="isGlobal"
                         name={field.name}
                         checked={field.state.value}
-                        onCheckedChange={(checked) => field.handleChange(checked === true)}
+                        onCheckedChange={(checked) => {
+                          setIsGlobalBudget(checked === true);
+                          field.handleChange(checked === true);
+                        }}
                       />
                       <Label htmlFor="isGlobal" className="text-sm font-medium">
                         Global budget (applies to all categories)
@@ -169,9 +176,8 @@ export function EditBudgetModal({ budget, open, onOpenChange }: EditBudgetModalP
               <form.Field
                 name="category"
                 children={(field) => {
-                  const isGlobal = form.getFieldValue("isGlobal");
                   return (
-                    <Field data-disabled={isGlobal}>
+                    <Field data-disabled={isGlobalBudget}>
                       <FieldLabel className="mb-2">
                         Category (if not global)
                       </FieldLabel>
@@ -180,7 +186,7 @@ export function EditBudgetModal({ budget, open, onOpenChange }: EditBudgetModalP
                         value={field.state.value}
                         onValueChange={(value) => field.handleChange(value as Category)}
                       >
-                        <SelectTrigger disabled={isGlobal}>
+                        <SelectTrigger disabled={isGlobalBudget}>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>

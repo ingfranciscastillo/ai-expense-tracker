@@ -7,6 +7,14 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format, parse } from "date-fns";
+import { es } from "date-fns/locale";
 import {
   Dialog,
   DialogContent,
@@ -186,19 +194,43 @@ export function EditReceiptModal({ receipt, open, onOpenChange }: EditReceiptMod
 
               <form.Field
                 name="expenseDate"
-                children={(field) => (
-                  <Field>
-                    <FieldLabel>Date</FieldLabel>
-                    <Input
-                      id="expenseDate"
-                      name={field.name}
-                      type="date"
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                    />
-                  </Field>
-                )}
+                children={(field) => {
+                  const selectedDate = field.state.value
+                    ? parse(field.state.value, "yyyy-MM-dd", new Date())
+                    : undefined;
+
+                  return (
+                    <Field>
+                      <FieldLabel>Date</FieldLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal">
+                            {selectedDate
+                              ? format(selectedDate, "PPP", { locale: es })
+                              : "Seleccionar fecha"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={(date) => {
+                              if (date) {
+                                const year = date.getFullYear();
+                                const month = String(date.getMonth() + 1).padStart(2, "0");
+                                const day = String(date.getDate()).padStart(2, "0");
+                                field.handleChange(`${year}-${month}-${day}`);
+                              } else {
+                                field.handleChange("");
+                              }
+                            }}
+                            locale={es}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </Field>
+                  );
+                }}
               />
 
               <div className="grid grid-cols-2 gap-4">

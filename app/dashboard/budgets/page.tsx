@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "../../lib/auth-client";
+import { useBudgetsWithProgress, useDeleteBudget } from "../../lib/queries";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,10 +20,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AddIcon, ArrowRight01Icon, Edit01Icon } from "@hugeicons/core-free-icons";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { AddIcon, ArrowRight01Icon, Edit01Icon, Delete01Icon, MoreHorizontalCircle01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { BudgetForm } from "./_components/budget-form";
 import { EditBudgetModal } from "./_components/edit-budget-modal";
+import { toast } from "sonner";
+import { ConfirmDialog } from "../_components/confirm-dialog";
 
 const categories = [
   { value: "comida", label: "Comida" },
@@ -56,30 +65,14 @@ const months = [
 export default function BudgetsPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const userId = session?.user?.id;
+  
+  const { data: budgets = [], isLoading } = useBudgetsWithProgress(userId);
+  const deleteMutation = useDeleteBudget(userId);
+  
   const [showForm, setShowForm] = useState(false);
-  const [budgets, setBudgets] = useState<any[]>([]);
-  const [loadingBudgets, setLoadingBudgets] = useState(true);
   const [editingBudget, setEditingBudget] = useState<any | null>(null);
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchBudgets(session.user.id);
-    }
-  }, [session]);
-
-  async function fetchBudgets(userId: string) {
-    try {
-      const res = await fetch(`/api/budgets?userId=${userId}`);
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setBudgets(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch budgets:", error);
-    } finally {
-      setLoadingBudgets(false);
-    }
-  }
+  const [deletingBudget, setDeletingBudget] = useState<any | null>(null);
 
   const getCategoryLabel = (category: string | null) => {
     if (!category) return "Global";
@@ -92,9 +85,6 @@ export default function BudgetsPage() {
 
   const handleFormSuccess = () => {
     setShowForm(false);
-    if (session?.user?.id) {
-      fetchBudgets(session.user.id);
-    }
   };
 
   return (
@@ -110,7 +100,7 @@ export default function BudgetsPage() {
         </Button>
       </div>
 
-      {showForm && session?.user?.id && (
+      {showForm && userId && (
         <Card>
           <CardHeader>
             <CardTitle>Create Budget</CardTitle>
@@ -120,7 +110,7 @@ export default function BudgetsPage() {
           </CardHeader>
           <CardContent>
             <BudgetForm
-              userId={session.user.id}
+              userId={userId}
               onSuccess={handleFormSuccess}
             />
           </CardContent>
@@ -128,7 +118,7 @@ export default function BudgetsPage() {
       )}
 
       <Card>
-        {loadingBudgets ? (
+        {isLoading ? (
           <CardContent className="py-10 text-center text-muted-foreground">
             Loading...
           </CardContent>
@@ -155,11 +145,11 @@ export default function BudgetsPage() {
                 <TableHead className="text-right">Limit</TableHead>
                 <TableHead className="text-right">Used</TableHead>
                 <TableHead>Progress</TableHead>
-                <TableHead className="w-20"></TableHead>
+                <TableHead className="w-[60px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {budgets.map((budget) => (
+              {budgets.map((budget: any) => (
                 <TableRow key={budget.id}>
                   <TableCell>
                     {getMonthLabel(budget.month)} {budget.year}
@@ -171,23 +161,45 @@ export default function BudgetsPage() {
                   <TableCell className="text-right">
                     {budget.currency} {budget.limitAmount}
                   </TableCell>
-                  <TableCell className="text-right">-</TableCell>
+                  <TableCell className="text-right">
+                    {budget.currency} {(budget.totalSpent || 0).toFixed(2)}
+                  </TableCell>
                   <TableCell>
                     <div className="w-full bg-muted rounded-full h-2">
                       <div
-                        className="bg-primary h-2 rounded-full"
-                        style={{ width: "0%" }}
+                        className={`h-2 rounded-full ${
+                          (budget.percentage || 0) >= 90
+                            ? "bg-destructive"
+                            : (budget.percentage || 0) >= 80
+                            ? "bg-yellow-500"
+                            : "bg-primary"
+                        }`}
+                        style={{ width: `${budget.percentage || 0}%` }}
                       ></div>
                     </div>
+                    <span className="text-xs text-muted-foreground">
+                      {(budget.percentage || 0).toFixed(0)}%
+                    </span>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setEditingBudget(budget)}
-                    >
-                      <HugeiconsIcon icon={Edit01Icon} size={18} />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="size-8">
+                          <HugeiconsIcon icon={MoreHorizontalCircle01Icon} size={18} />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditingBudget(budget)}>
+                          <HugeiconsIcon icon={Edit01Icon} size={16} className="mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeletingBudget(budget)}>
+                          <HugeiconsIcon icon={Delete01Icon} size={16} className="mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -203,11 +215,32 @@ export default function BudgetsPage() {
           onOpenChange={(open) => {
             if (!open) {
               setEditingBudget(null);
-              fetchBudgets(session?.user?.id!);
             }
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deletingBudget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeletingBudget(null);
+          }
+        }}
+        onConfirm={async () => {
+          if (!deletingBudget) return;
+          try {
+            await deleteMutation.mutateAsync(deletingBudget.id);
+            toast.success("Presupuesto eliminado exitosamente");
+          } catch (error: any) {
+            toast.error(error.message || "Error al eliminar");
+          }
+          setDeletingBudget(null);
+        }}
+        title="Eliminar presupuesto"
+        description="¿Estás seguro de que deseas eliminar este presupuesto? Esta acción no se puede deshacer."
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

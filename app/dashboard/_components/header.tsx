@@ -15,6 +15,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { ModeToggle } from "@/components/ui/mode-toggle";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Notification01Icon, Settings01Icon, LogoutIcon, UserIcon } from "@hugeicons/core-free-icons";
 
@@ -32,8 +34,7 @@ export function DashboardHeader() {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
       <div className="flex items-center gap-2">
-        {/* Placeholder for SidebarTrigger - will be injected by parent */}
-        <span className="text-sm text-muted-foreground">Menu</span>
+        <SidebarTrigger />
       </div>
 
       <div className="flex items-center gap-2">
@@ -44,6 +45,9 @@ export function DashboardHeader() {
             0
           </span>
         </Button>
+
+        {/* Theme toggle */}
+        <ModeToggle />
 
         {/* User dropdown */}
         <DropdownMenu>

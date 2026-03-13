@@ -60,7 +60,7 @@ export async function createExpense(data: unknown, userId: string) {
         userId: userId,
         merchant: validated.merchant,
         description: validated.description,
-        expenseDate: new Date(validated.expenseDate),
+        expenseDate: new Date(validated.expenseDate + "T00:00:00"),
         totalAmount: validated.totalAmount.toString(),
         taxAmount: validated.taxAmount?.toString(),
         currency: validated.currency,
@@ -100,7 +100,7 @@ export async function updateExpense(data: unknown) {
       .set({
         ...(validated.merchant && { merchant: validated.merchant }),
         ...(validated.description && { description: validated.description }),
-        ...(validated.expenseDate && { expenseDate: new Date(validated.expenseDate) }),
+        ...(validated.expenseDate && { expenseDate: new Date(validated.expenseDate + "T00:00:00") }),
         ...(validated.totalAmount && { totalAmount: validated.totalAmount.toString() }),
         ...(validated.taxAmount && { taxAmount: validated.taxAmount.toString() }),
         ...(validated.currency && { currency: validated.currency }),

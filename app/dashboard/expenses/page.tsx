@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "../../lib/auth-client";
+import { useExpenses, useDeleteExpense } from "../../lib/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -13,9 +14,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowRight01Icon, Edit01Icon } from "@hugeicons/core-free-icons";
+import { ArrowRight01Icon, Edit01Icon, MoreHorizontalCircle01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { EditExpenseModal } from "./_components/edit-expense-modal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import { ConfirmDialog } from "../_components/confirm-dialog";
 
 const categories = [
   { value: "", label: "All Categories" },
@@ -33,34 +42,20 @@ const categories = [
 ];
 
 export default function ExpensesPage() {
-  const { data: session, isPending } = useSession();
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: session, isPending: sessionPending } = useSession();
+  const userId = session?.user?.id;
+  
+  const { data: expenses = [], isLoading } = useExpenses(userId);
+  const deleteMutation = useDeleteExpense(userId);
+  
   const [editingExpense, setEditingExpense] = useState<any | null>(null);
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchExpenses(session.user.id);
-    }
-  }, [session]);
-
-  async function fetchExpenses(userId: string) {
-    try {
-      const res = await fetch(`/api/expenses?userId=${userId}`);
-      const data = await res.json();
-      setExpenses(data);
-    } catch (error) {
-      console.error("Failed to fetch expenses:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [deletingExpense, setDeletingExpense] = useState<any | null>(null);
 
   const getCategoryLabel = (category: string) => {
     return categories.find((c) => c.value === category)?.label || category;
   };
 
-  if (isPending || loading) {
+  if (sessionPending || isLoading) {
     return (
       <div className="max-w-6xl mx-auto p-6">
         <Card>
@@ -122,11 +117,11 @@ export default function ExpensesPage() {
                 <TableHead>Category</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead>Deductible</TableHead>
-                <TableHead className="w-20"></TableHead>
+                <TableHead className="w-[60px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {expenses.map((expense) => (
+              {expenses.map((expense: any) => (
                 <TableRow key={expense.id}>
                   <TableCell>
                     {expense.expenseDate
@@ -142,13 +137,24 @@ export default function ExpensesPage() {
                   </TableCell>
                   <TableCell>{expense.isDeductible ? "Yes" : "No"}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setEditingExpense(expense)}
-                    >
-                      <HugeiconsIcon icon={Edit01Icon} size={18} />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="size-8">
+                          <HugeiconsIcon icon={MoreHorizontalCircle01Icon} size={18} />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditingExpense(expense)}>
+                          <HugeiconsIcon icon={Edit01Icon} size={16} className="mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeletingExpense(expense)}>
+                          <HugeiconsIcon icon={Delete01Icon} size={16} className="mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -164,11 +170,32 @@ export default function ExpensesPage() {
           onOpenChange={(open) => {
             if (!open) {
               setEditingExpense(null);
-              fetchExpenses(session.user.id);
             }
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deletingExpense}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeletingExpense(null);
+          }
+        }}
+        onConfirm={async () => {
+          if (!deletingExpense) return;
+          try {
+            await deleteMutation.mutateAsync(deletingExpense.id);
+            toast.success("Gasto eliminado exitosamente");
+          } catch (error: any) {
+            toast.error(error.message || "Error al eliminar");
+          }
+          setDeletingExpense(null);
+        }}
+        title="Eliminar gasto"
+        description="¿Estás seguro de que deseas eliminar este gasto? Esta acción no se puede deshacer."
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

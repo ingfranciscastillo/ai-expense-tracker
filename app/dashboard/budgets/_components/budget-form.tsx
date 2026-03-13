@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useState } from "react";
 import { createBudget } from "../../../lib/actions/budgets";
 import { createBudgetSchema } from "../../../lib/validations/receipt";
 import { toast } from "sonner";
@@ -71,6 +72,7 @@ interface BudgetFormProps {
 export function BudgetForm({ userId, onSuccess }: BudgetFormProps) {
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
+  const [isGlobalBudget, setIsGlobalBudget] = useState(true);
 
   const form = useForm({
     defaultValues: {
@@ -112,9 +114,10 @@ export function BudgetForm({ userId, onSuccess }: BudgetFormProps) {
                     id="isGlobal"
                     name={field.name}
                     checked={field.state.value}
-                    onCheckedChange={(checked) =>
-                      field.handleChange(checked === true)
-                    }
+                    onCheckedChange={(checked) => {
+                      setIsGlobalBudget(checked === true);
+                      field.handleChange(checked === true);
+                    }}
                   />
                   <Label htmlFor="isGlobal" className="text-sm font-medium">
                     Global budget (for all categories)
@@ -127,11 +130,10 @@ export function BudgetForm({ userId, onSuccess }: BudgetFormProps) {
           <form.Field
             name="category"
             children={(field) => {
-              const isGlobal = form.getFieldValue("isGlobal");
               const isInvalid =
                 field.state.meta.isTouched && !field.state.meta.isValid;
               return (
-                <Field data-disabled={isGlobal}>
+                <Field data-disabled={isGlobalBudget}>
                   <FieldLabel className="mb-2">
                     Category (if not global)
                   </FieldLabel>
@@ -140,7 +142,7 @@ export function BudgetForm({ userId, onSuccess }: BudgetFormProps) {
                     value={field.state.value}
                     onValueChange={field.handleChange}
                   >
-                    <SelectTrigger disabled={isGlobal}>
+                    <SelectTrigger disabled={isGlobalBudget}>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>

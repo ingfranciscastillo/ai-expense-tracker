@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "../../lib/auth-client";
+import { useReceipts, useDeleteReceipt } from "../../lib/queries";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -14,9 +15,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UploadIcon, ArrowRight01Icon, Edit01Icon } from "@hugeicons/core-free-icons";
+import { UploadIcon, Edit01Icon, MoreHorizontalCircle01Icon, Delete01Icon, FileViewIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { EditReceiptModal } from "./_components/edit-receipt-modal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import { ConfirmDialog } from "../_components/confirm-dialog";
 
 const categoryLabels: Record<string, string> = {
   comida: "Comida",
@@ -33,28 +42,14 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function ReceiptsPage() {
-  const { data: session, isPending } = useSession();
-  const [receipts, setReceipts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: session, isPending: sessionPending } = useSession();
+  const userId = session?.user?.id;
+  
+  const { data: receipts = [], isLoading } = useReceipts(userId);
+  const deleteMutation = useDeleteReceipt(userId);
+  
   const [editingReceipt, setEditingReceipt] = useState<any | null>(null);
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchReceipts(session.user.id);
-    }
-  }, [session]);
-
-  async function fetchReceipts(userId: string) {
-    try {
-      const res = await fetch(`/api/receipts?userId=${userId}`);
-      const data = await res.json();
-      setReceipts(data);
-    } catch (error) {
-      console.error("Failed to fetch receipts:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [deletingReceipt, setDeletingReceipt] = useState<any | null>(null);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -81,7 +76,7 @@ export default function ReceiptsPage() {
     return category ? categoryLabels[category] || category : "-";
   };
 
-  if (isPending || loading) {
+  if (sessionPending || isLoading) {
     return (
       <div className="max-w-6xl mx-auto p-6">
         <Card>
@@ -151,7 +146,7 @@ export default function ReceiptsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {receipts.map((receipt) => (
+              {receipts.map((receipt: any) => (
                 <TableRow key={receipt.id}>
                   <TableCell>
                     {receipt.createdAt
@@ -181,24 +176,34 @@ export default function ReceiptsPage() {
                     {getConfidenceLabel(receipt.confidenceScore)}
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
-                      {receipt.status === "completed" && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingReceipt(receipt)}
-                          >
-                            <HugeiconsIcon icon={Edit01Icon} size={18} />
-                          </Button>
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/dashboard/receipts/${receipt.id}`}>
-                              Review
-                            </Link>
-                          </Button>
-                        </>
-                      )}
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="size-8">
+                          <HugeiconsIcon icon={MoreHorizontalCircle01Icon} size={18} />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {receipt.status === "completed" && (
+                          <>
+                            <DropdownMenuItem onClick={() => setEditingReceipt(receipt)}>
+                              <HugeiconsIcon icon={Edit01Icon} size={16} className="mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/dashboard/receipts/${receipt.id}`}>
+                                <HugeiconsIcon icon={FileViewIcon} size={16} className="mr-2" />
+                                Review
+                              </Link>
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeletingReceipt(receipt)}>
+                          <HugeiconsIcon icon={Delete01Icon} size={16} className="mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -214,11 +219,32 @@ export default function ReceiptsPage() {
           onOpenChange={(open) => {
             if (!open) {
               setEditingReceipt(null);
-              fetchReceipts(session.user.id);
             }
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deletingReceipt}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeletingReceipt(null);
+          }
+        }}
+        onConfirm={async () => {
+          if (!deletingReceipt) return;
+          try {
+            await deleteMutation.mutateAsync(deletingReceipt.id);
+            toast.success("Recibo eliminado exitosamente");
+          } catch (error: any) {
+            toast.error(error.message || "Error al eliminar");
+          }
+          setDeletingReceipt(null);
+        }}
+        title="Eliminar recibo"
+        description="¿Estás seguro de que deseas eliminar este recibo? Esta acción no se puede deshacer."
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

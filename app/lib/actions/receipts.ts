@@ -206,7 +206,7 @@ export async function createExpenseFromReceipt(data: unknown, userId: string) {
         receiptId: validated.receiptId,
         merchant: validated.merchant,
         description: validated.description,
-        expenseDate: new Date(validated.expenseDate),
+        expenseDate: new Date(validated.expenseDate + "T00:00:00"),
         totalAmount: validated.totalAmount.toString(),
         taxAmount: validated.taxAmount?.toString(),
         currency: validated.currency,
@@ -221,7 +221,7 @@ export async function createExpenseFromReceipt(data: unknown, userId: string) {
       .update(receipts)
       .set({ 
         merchant: validated.merchant,
-        expenseDate: new Date(validated.expenseDate),
+        expenseDate: new Date(validated.expenseDate + "T00:00:00"),
         totalAmount: validated.totalAmount.toString(),
         taxAmount: validated.taxAmount?.toString(),
         currency: validated.currency,
@@ -261,7 +261,7 @@ export async function updateReceipt(data: unknown) {
       .update(receipts)
       .set({
         ...(validated.merchant && { merchant: validated.merchant }),
-        ...(validated.expenseDate && { expenseDate: new Date(validated.expenseDate) }),
+        ...(validated.expenseDate && { expenseDate: new Date(validated.expenseDate + "T00:00:00") }),
         ...(validated.totalAmount && { totalAmount: validated.totalAmount.toString() }),
         ...(validated.taxAmount && { taxAmount: validated.taxAmount.toString() }),
         ...(validated.currency && { currency: validated.currency }),
@@ -288,4 +288,23 @@ export async function updateReceipt(data: unknown) {
 
 export async function retryReceiptProcessing(receiptId: string) {
   return processReceiptWithAI(receiptId)
+}
+
+export async function deleteReceipt(id: string) {
+  try {
+    const existingReceipt = await db.query.receipts.findFirst({
+      where: eq(receipts.id, id),
+    })
+
+    if (!existingReceipt) {
+      return { error: "El recibo que intentas eliminar no existe." }
+    }
+
+    await db.delete(receipts).where(eq(receipts.id, id))
+    revalidatePath("/dashboard/receipts")
+    return { success: true }
+  } catch (error) {
+    console.error("Delete receipt error:", error)
+    return { error: "No se pudo eliminar el recibo. Por favor intenta de nuevo." }
+  }
 }
