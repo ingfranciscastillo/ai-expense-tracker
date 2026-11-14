@@ -12,8 +12,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Standalone Vite app with its own tooling (Biome).
-    "readme-cards/**",
   ]),
 ]);
 
